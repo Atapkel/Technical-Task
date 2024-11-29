@@ -8,6 +8,7 @@ import solve.lab.coffeeMachine.models.Rate;
 import solve.lab.coffeeMachine.models.Resource;
 import solve.lab.coffeeMachine.repositories.CoffeeRepository;
 import solve.lab.coffeeMachine.repositories.IngredientsRepository;
+import solve.lab.coffeeMachine.utils.CoffeeNotFoundException;
 
 import java.util.*;
 
@@ -26,8 +27,11 @@ public class CoffeesService {
     }
     @Transactional
     public void saveCoffee(Coffee coffee){
+        Optional<Coffee> checkCoffee = coffeeRepository.findByName(coffee.getName());
+        if (checkCoffee.isPresent()){
+            throw new RuntimeException();
+        }
         coffeeRepository.save(coffee);
-
         Rate rate = new Rate();
         rate.setOrderNumber(0);
         rate.setCoffee(coffee);
@@ -46,11 +50,16 @@ public class CoffeesService {
     }
 
     public Coffee findCoffeeByName(String name) {
-        return coffeeRepository.findByName(name).orElse(null);
+        Optional<Coffee> coffee = coffeeRepository.findByName(name);
+        return coffee.orElseThrow(CoffeeNotFoundException::new);
     }
 
     public String makeOrder(String name, int quantity) {
-        Coffee coffee = findCoffeeByName(name);
+        Optional<Coffee> checkCoffee = coffeeRepository.findByName(name);
+        if (checkCoffee.isEmpty()){
+            throw new CoffeeNotFoundException();
+        }
+        Coffee coffee = checkCoffee.get();
         List<Ingredient> ingredients = coffee.getIngredients();
         StringBuilder response = new StringBuilder();
         boolean check = false;

@@ -1,11 +1,16 @@
 package solve.lab.coffeeMachine.controllers;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import solve.lab.coffeeMachine.dto.QuantityDTO;
 import solve.lab.coffeeMachine.dto.ResourceDTO;
 import solve.lab.coffeeMachine.models.Resource;
 import solve.lab.coffeeMachine.services.ResourcesService;
+import solve.lab.coffeeMachine.utils.CoffeeMachineErrorResponse;
+import solve.lab.coffeeMachine.utils.ResourceAlreadyExists;
+import solve.lab.coffeeMachine.utils.ResourceNotFoundException;
 
 import java.util.List;
 
@@ -19,7 +24,7 @@ public class ResourcesController {
         this.resourcesService = resourcesService;
         this.modelMapper = modelMapper;
     }
-    @GetMapping("/")
+    @GetMapping()
     public List<ResourceDTO> allResources(){
         return resourcesService.findAll()
                 .stream().map(this::convertToResourceDTO).toList();
@@ -39,6 +44,25 @@ public class ResourcesController {
         resourcesService.addQuantity(name,quantityDTO.getQuantity());
         return "Added successfully!";
     }
+    @ExceptionHandler
+    private ResponseEntity<CoffeeMachineErrorResponse> handleException(ResourceNotFoundException e){
+        CoffeeMachineErrorResponse response = new CoffeeMachineErrorResponse(
+                "Resource not found!",
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<CoffeeMachineErrorResponse> handleException(ResourceAlreadyExists e){
+        CoffeeMachineErrorResponse response = new CoffeeMachineErrorResponse(
+                "Resource already exists, you can add quantity ",
+                System.currentTimeMillis()
+        );
+        return new ResponseEntity<>(response, HttpStatus.ALREADY_REPORTED);
+    }
+
+
     private ResourceDTO convertToResourceDTO(Resource resource){
         return modelMapper.map(resource, ResourceDTO.class);
     }
